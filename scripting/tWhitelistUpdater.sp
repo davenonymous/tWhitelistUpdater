@@ -1,6 +1,10 @@
 #pragma semicolon 1
 #include <sourcemod>
 #include <regex>
+#undef REQUIRE_PLUGIN
+#include <updater>
+
+#define UPDATE_URL    "http://updates.thrawn.de/tWhitelistUpdater/package.tWhitelistUpdater.cfg"
 
 #define VERSION 				"0.1.0"
 #define PATH_ITEMS_GAME			"scripts/items/items_game.txt"
@@ -48,6 +52,10 @@ public Plugin:myinfo =
 };
 
 public OnPluginStart() {
+	if (LibraryExists("updater")) {
+		Updater_AddPlugin(UPDATE_URL);
+	}
+
 	if(!FileExists(PATH_ITEMS_GAME, true)) {
 		SetFailState("items_game.txt does not exist. Something is seriously wrong!");
 		return;
@@ -90,6 +98,10 @@ public OnPluginStart() {
 
 	RegAdminCmd("sm_updatewhitelist", CMD_UpdateWhitelist, ADMFLAG_KICK);
 	RegAdminCmd("sm_updatewhitelist_all", CMD_UpdateAllWhitelists, ADMFLAG_KICK);
+}
+
+public OnLibraryAdded(const String:name[]) {
+    if (StrEqual(name, "updater"))Updater_AddPlugin(UPDATE_URL);
 }
 
 public OnAllPluginsLoaded() {
