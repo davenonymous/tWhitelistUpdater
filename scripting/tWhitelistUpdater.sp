@@ -401,9 +401,6 @@ public LoadDefaultTrie() {
 //	Output
 //----------------------------------------
 public ResultToFile(Handle:hResult, Handle:hConfig, const String:sBuffer[]) {
-	new String:sOutputPath[PLATFORM_MAX_PATH];
-	Format(sOutputPath, sizeof(sOutputPath), "cfg/%s_whitelist.txt", sBuffer);
-
 	new Handle:hSettings = INVALID_HANDLE;
 	GetTrieValue(hConfig, "Global", hSettings);
 
@@ -413,6 +410,14 @@ public ResultToFile(Handle:hResult, Handle:hConfig, const String:sBuffer[]) {
 	new bool:bAllowActionItems	= GetSetting(hSettings, "AllowActionItems", g_bAllowActionItems);
 	new bool:bAllowNoiseMaker	= GetSetting(hSettings, "AllowNoiseMaker", g_bAllowNoiseMaker);
 	new bool:bAllowHats			= GetSetting(hSettings, "AllowHats", g_bAllowHats);
+
+	new String:sOutputPath[PLATFORM_MAX_PATH];
+	new String:sFilename[PLATFORM_MAX_PATH];
+	if(GetTrieString(hSettings, "Filename", sFilename, sizeof(sFilename))) {
+		Format(sOutputPath, sizeof(sOutputPath), "cfg/%s", sFilename);
+	} else {
+		Format(sOutputPath, sizeof(sOutputPath), "cfg/%s_whitelist.txt", sBuffer);
+	}
 
 	new Handle:hFile = OpenFile(sOutputPath, "w");
 
