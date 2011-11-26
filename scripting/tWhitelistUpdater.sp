@@ -568,6 +568,7 @@ public Handle:GetResultTrie(Handle:hConfig, Handle:hSkins) {
 	new Handle:hArrayBlockedWeaponsForSupp = CreateArray(64);
 	new Handle:hArrayBlockedWeaponsForMain = CreateArray(64);
 
+	new bool:bAllowAllWeapons = GetSetting(hSettings, "AllowAllWeapons", false);
 
 	//The first run will handle ONLY the weapons
 	// We need that to see which set hats can be allowed
@@ -647,6 +648,27 @@ public Handle:GetResultTrie(Handle:hConfig, Handle:hSkins) {
 			}
 		}
 
+		// If all weapons should be allowed except the ones specified in the blocked section
+		if(bAllowAllWeapons && FindStringInArray(hForceBlockedWeapons, sName) == -1) {
+			PushArrayString(hArrayAllowedWeapons, sName);
+
+			// Also sort them into the "pretty" arrays for a nice header output
+			if(KvJumpToKey(g_hItems, "used_by_classes")) {
+				KvGotoFirstSubKey(g_hItems, false);
+				do {
+					decl String:sClass[64];
+					KvGetSectionName(g_hItems, sClass, sizeof(sClass));
+
+					PushArrayStringUnique(IsMainClass(sClass) ? hArrayAllowedWeaponsForMain : hArrayAllowedWeaponsForSupp, sName);
+				} while (KvGotoNextKey(g_hItems, false));
+
+				KvGoBack(g_hItems);
+			}
+			KvGoBack(g_hItems);
+
+			// No further processing for this weapon necessary
+			continue;
+		}
 
 		// At this point weapons have no way of being allowed anymore
 		PushArrayString(hArrayBlockedWeapons, sName);
