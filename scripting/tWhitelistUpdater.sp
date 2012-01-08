@@ -6,7 +6,7 @@
 
 #define UPDATE_URL    "http://updates.thrawn.de/tWhitelistUpdater/package.tWhitelistUpdater.cfg"
 
-#define VERSION 				"0.1.3"
+#define VERSION 				"0.1.4"
 #define PATH_ITEMS_GAME			"scripts/items/items_game.txt"
 
 new Handle:g_hCvarAutoupdate = INVALID_HANDLE;
