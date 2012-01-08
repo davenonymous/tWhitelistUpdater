@@ -751,7 +751,11 @@ public Handle:GetResultTrie(Handle:hConfig, Handle:hSkins) {
 				KvGoBack(g_hItems);
 
 				if(bIsNoisemaker) {
-					PushArrayString(hArrayNoiseMaker, sName);
+					if(FindStringInArray(hForceBlockedWeapons, sName) == -1) {
+						PushArrayString(hArrayNoiseMaker, sName);
+					} else {
+						PushArrayString(hArrayBlockedHats, sName);
+					}
 					continue;
 				}
 			}
@@ -762,17 +766,19 @@ public Handle:GetResultTrie(Handle:hConfig, Handle:hSkins) {
 		}
 
 		if(StrEqual(sItemSlot, "head")) {
-			if(GetSetting(hSettings, "AllowHats", g_bAllowHats))PushArrayString(hArrayAllowedHats, sName);
-			else PushArrayString(hArrayBlockedHats, sName);
+			if(GetSetting(hSettings, "AllowHats", g_bAllowHats) && FindStringInArray(hForceBlockedWeapons, sName) == -1) {
+				PushArrayString(hArrayAllowedHats, sName);
+			} else PushArrayString(hArrayBlockedHats, sName);
+
 			continue;
 		}
 
 		if(StrEqual(sItemSlot, "misc")) {
-			if(GetSetting(hSettings, "AllowHats", g_bAllowHats))PushArrayString(hArrayMiscItems, sName);
-			else PushArrayString(hArrayBlockedHats, sName);
+			if(GetSetting(hSettings, "AllowHats", g_bAllowHats) && FindStringInArray(hForceBlockedWeapons, sName) == -1) {
+				PushArrayString(hArrayMiscItems, sName);
+			} else PushArrayString(hArrayBlockedHats, sName);
 			continue;
 		}
-
 
 
 	} while (KvGotoNextKey(g_hItems, false));
