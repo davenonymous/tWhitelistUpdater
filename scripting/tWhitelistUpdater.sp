@@ -457,7 +457,7 @@ public ResultToFile(Handle:hResult, Handle:hConfig, const String:sBuffer[]) {
 	PrintArray(hFile, hResult, "RenamedWeapons",	"Renamed Weapons:", g_bAllowRenamedWeapons, bMinimal);
 	PrintArray(hFile, hResult, "WeaponSkins", 		"Weapon Skins:", bAllowWeaponSkins, bMinimal);
 	PrintArray(hFile, hResult, "BlockedWeapons",	"Blocked Weapons:", false, bMinimal);
-	PrintArray(hFile, hResult, "BlockedHats", 		"Blocked Hats:", false, bMinimal);
+	PrintArray(hFile, hResult, "BlockedHats", 		"Blocked Items:", false, bMinimal);
 	PrintArray(hFile, hResult, "AllowedHats", 		"Allowed Hats:", bAllowHats, bMinimal);
 	PrintArray(hFile, hResult, "MiscItems", 		"Misc Items:", bAllowHats, bMinimal);
 	PrintArray(hFile, hResult, "ActionItems", 		"Action Items:", bAllowActionItems, bMinimal);
@@ -555,7 +555,7 @@ public Handle:GetResultTrie(Handle:hConfig, Handle:hSkins) {
 	new Handle:hArrayRenamedWeapons = CreateArray(64);
 
 	new Handle:hArrayAllowHatsFromSet = CreateArray(64);
-	new Handle:hArrayBlockedHats = CreateArray(64);
+	new Handle:hArrayBlockedItems = CreateArray(64);
 
 	new Handle:hArrayAllowedHats = CreateArray(64);
 	new Handle:hArrayActionItems = CreateArray(64);
@@ -727,7 +727,7 @@ public Handle:GetResultTrie(Handle:hConfig, Handle:hSkins) {
 			KvGetString(g_hItems, "item_set", sItemSet, sizeof(sItemSet), "");
 			if(strlen(sItemSet) > 0) {
 				if(FindStringInArray(hArrayAllowHatsFromSet, sItemSet) == -1 && FindStringInArray(g_hArrayAttributelessItemsets, sItemSet) == -1) {
-					PushArrayString(hArrayBlockedHats, sName);
+					PushArrayString(hArrayBlockedItems, sName);
 					continue;
 				}
 			}
@@ -754,7 +754,7 @@ public Handle:GetResultTrie(Handle:hConfig, Handle:hSkins) {
 					if(FindStringInArray(hForceBlockedWeapons, sName) == -1) {
 						PushArrayString(hArrayNoiseMaker, sName);
 					} else {
-						PushArrayString(hArrayBlockedHats, sName);
+						PushArrayString(hArrayBlockedItems, sName);
 					}
 					continue;
 				}
@@ -768,7 +768,7 @@ public Handle:GetResultTrie(Handle:hConfig, Handle:hSkins) {
 		if(StrEqual(sItemSlot, "head")) {
 			if(GetSetting(hSettings, "AllowHats", g_bAllowHats) && FindStringInArray(hForceBlockedWeapons, sName) == -1) {
 				PushArrayString(hArrayAllowedHats, sName);
-			} else PushArrayString(hArrayBlockedHats, sName);
+			} else PushArrayString(hArrayBlockedItems, sName);
 
 			continue;
 		}
@@ -776,7 +776,7 @@ public Handle:GetResultTrie(Handle:hConfig, Handle:hSkins) {
 		if(StrEqual(sItemSlot, "misc")) {
 			if(GetSetting(hSettings, "AllowHats", g_bAllowHats) && FindStringInArray(hForceBlockedWeapons, sName) == -1) {
 				PushArrayString(hArrayMiscItems, sName);
-			} else PushArrayString(hArrayBlockedHats, sName);
+			} else PushArrayString(hArrayBlockedItems, sName);
 			continue;
 		}
 
@@ -791,7 +791,7 @@ public Handle:GetResultTrie(Handle:hConfig, Handle:hSkins) {
 	SetTrieValue(hResultTrie, "RenamedWeapons",			hArrayRenamedWeapons);
 
 	SetTrieValue(hResultTrie, "AllowHatsFromSet",		hArrayAllowHatsFromSet);
-	SetTrieValue(hResultTrie, "BlockedHats",			hArrayBlockedHats);
+	SetTrieValue(hResultTrie, "BlockedHats",			hArrayBlockedItems);
 
 	SetTrieValue(hResultTrie, "AllowedHats",			hArrayAllowedHats);
 	SetTrieValue(hResultTrie, "ActionItems",			hArrayActionItems);
