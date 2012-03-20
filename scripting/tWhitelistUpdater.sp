@@ -611,17 +611,19 @@ public Handle:GetResultTrie(Handle:hConfig, Handle:hSkins) {
 
 			// Also sort them into the "pretty" arrays for a nice header output
 			if(KvJumpToKey(g_hItems, "used_by_classes")) {
-				KvGotoFirstSubKey(g_hItems, false);
-				do {
-					decl String:sClass[64];
-					KvGetSectionName(g_hItems, sClass, sizeof(sClass));
+				if(KvGotoFirstSubKey(g_hItems, false)) {
+					do {
+						decl String:sClass[64];
+						KvGetSectionName(g_hItems, sClass, sizeof(sClass));
 
-					PushArrayStringUnique(IsMainClass(sClass) ? hArrayAllowedWeaponsForMain : hArrayAllowedWeaponsForSupp, sName);
-				} while (KvGotoNextKey(g_hItems, false));
+						PushArrayStringUnique(IsMainClass(sClass) ? hArrayAllowedWeaponsForMain : hArrayAllowedWeaponsForSupp, sName);
+					} while (KvGotoNextKey(g_hItems, false));
+
+					KvGoBack(g_hItems);
+				}
 
 				KvGoBack(g_hItems);
 			}
-			KvGoBack(g_hItems);
 
 			// No further processing for this weapon necessary
 			continue;
