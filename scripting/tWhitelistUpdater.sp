@@ -491,7 +491,7 @@ public PrintArray(Handle:hFile, Handle:hResult, const String:sSection[], const S
 	GetTrieValue(hResult, sSection, hResultPart);
 	new iSize = GetArraySize(hResultPart);
 
-	WriteFileLine(hFile, "\n    // %s", sHeader);
+	WriteFileLine(hFile, "\n    // %s (Total: %i)", sHeader, iSize);
 	if(iSize == 0) {
 		WriteFileLine(hFile, "    // None", sHeader);
 	} else {
