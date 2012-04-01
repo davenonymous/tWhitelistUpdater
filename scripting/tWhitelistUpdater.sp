@@ -6,7 +6,7 @@
 
 #define UPDATE_URL    "http://updates.thrawn.de/tWhitelistUpdater/package.tWhitelistUpdater.cfg"
 
-#define VERSION 				"0.1.5"
+#define VERSION 				"0.1.6"
 #define PATH_ITEMS_GAME			"scripts/items/items_game.txt"
 
 new Handle:g_hCvarAutoupdate = INVALID_HANDLE;
@@ -731,7 +731,6 @@ public Handle:GetResultTrie(Handle:hConfig, Handle:hSkins) {
 			KvGetString(g_hItems, "item_set", sItemSet, sizeof(sItemSet), "");
 			if(strlen(sItemSet) > 0) {
 				if(FindStringInArray(hArrayAllowHatsFromSet, sItemSet) == -1 && FindStringInArray(g_hArrayAttributelessItemsets, sItemSet) == -1) {
-					LogMessage("Blocking %s because it's a set hat", sName);
 					PushArrayString(hArrayBlockedItems, sName);
 					continue;
 				}
