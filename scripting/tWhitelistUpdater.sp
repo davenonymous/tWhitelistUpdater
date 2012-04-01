@@ -555,6 +555,8 @@ public Handle:GetResultTrie(Handle:hConfig, Handle:hSkins) {
 	new Handle:hArrayRenamedWeapons = CreateArray(64);
 
 	new Handle:hArrayAllowHatsFromSet = CreateArray(64);
+	PushArrayString(hArrayAllowHatsFromSet, "hidden_detective_set");
+
 	new Handle:hArrayBlockedItems = CreateArray(64);
 
 	new Handle:hArrayAllowedHats = CreateArray(64);
@@ -729,6 +731,7 @@ public Handle:GetResultTrie(Handle:hConfig, Handle:hSkins) {
 			KvGetString(g_hItems, "item_set", sItemSet, sizeof(sItemSet), "");
 			if(strlen(sItemSet) > 0) {
 				if(FindStringInArray(hArrayAllowHatsFromSet, sItemSet) == -1 && FindStringInArray(g_hArrayAttributelessItemsets, sItemSet) == -1) {
+					LogMessage("Blocking %s because it's a set hat", sName);
 					PushArrayString(hArrayBlockedItems, sName);
 					continue;
 				}
