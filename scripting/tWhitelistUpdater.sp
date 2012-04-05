@@ -590,6 +590,7 @@ public Handle:GetResultTrie(Handle:hConfig, Handle:hSkins) {
 		//Skip default weapons
 		iIndex = StringToInt(sIndex);
 		if(iIndex  < 31)continue;
+		if(iIndex == 735)continue;
 
 
 		// Get basic information about the item: Defaults < Prefabs < Values
@@ -835,7 +836,8 @@ public GetItemInfo(String:sItemSlot[], maxLenIS, String:sItemClass[], maxLenIC, 
 }
 
 public bool:IsUnrelatedItemClass(String:sItemClass[]) {
-	return (StrEqual(sItemClass, "tool") ||
+	return (
+			StrEqual(sItemClass, "tool") ||
 			StrEqual(sItemClass, "supply_crate") ||
 			StrEqual(sItemClass, "map_token") ||
 			StrEqual(sItemClass, "class_token") ||
@@ -846,11 +848,24 @@ public bool:IsUnrelatedItemClass(String:sItemClass[]) {
 }
 
 public bool:IsWeaponSlot(String:sItemSlot[]) {
-	return (StrEqual(sItemSlot, "melee") || StrEqual(sItemSlot, "primary") || StrEqual(sItemSlot, "secondary") || StrEqual(sItemSlot, "pda2"));
+	return (
+			StrEqual(sItemSlot, "melee") ||
+			StrEqual(sItemSlot, "primary") ||
+			StrEqual(sItemSlot, "secondary") ||
+			StrEqual(sItemSlot, "pda2") ||
+			StrEqual(sItemSlot, "building") ||
+			StrEqual(sItemSlot, "pda")
+	);
 }
 
 public bool:IsMainClass(String:sClass[]) {
-	return (StrEqual(sClass, "scout") || StrEqual(sClass, "soldier") || StrEqual(sClass, "heavy") || StrEqual(sClass, "demo") || StrEqual(sClass, "medic"));
+	return (
+			StrEqual(sClass, "scout") ||
+			StrEqual(sClass, "soldier") ||
+			StrEqual(sClass, "heavy") ||
+			StrEqual(sClass, "demo") ||
+			StrEqual(sClass, "medic")
+	);
 }
 
 public PushArrayStringUnique(Handle:hArray, String:sString[]) {
