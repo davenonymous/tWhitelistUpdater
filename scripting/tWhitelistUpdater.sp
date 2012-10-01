@@ -329,20 +329,45 @@ public LoadPrefabs() {
 			decl String:sPFName[64];
 			KvGetSectionName(g_hItems, sPFName, sizeof(sPFName));
 
-			new Handle:hTriePrefab = CreateTrie();
-			new String:sItemSlot[16];
-			KvGetString(g_hItems, "item_slot", sItemSlot, sizeof(sItemSlot));
+			new Handle:hKvPrefab = CreateKeyValues(sPFName);
+			KvCopySubkeys(g_hItems, hKvPrefab);
 
-			new String:sItemClass[16];
-			KvGetString(g_hItems, "item_class", sItemClass, sizeof(sItemClass));
-
-			SetTrieString(hTriePrefab, "item_slot", sItemSlot);
-			SetTrieString(hTriePrefab, "item_class", sItemClass);
-
-			SetTrieValue(g_hTriePrefabs, sPFName, hTriePrefab);
+			SetTrieValue(g_hTriePrefabs, sPFName, hKvPrefab);
 			PushArrayString(g_hArrayPrefabs, sPFName);
 		} while (KvGotoNextKey(g_hItems, false));
 	}
+}
+
+KvCopySubkeysSafe_Iterate(Handle:hOrigin, Handle:hDest, bool:bReplace=true, bool:bFirst=true) {
+do {
+		new String:sSection[255];
+		KvGetSectionName(hOrigin, sSection, sizeof(sSection));
+
+		new String:sValue[255];
+		KvGetString(hOrigin, "", sValue, sizeof(sValue));
+
+		new bool:bIsSubSection = ((KvNodesInStack(hOrigin) == 0) || (KvGetDataType(hOrigin, "") == KvData_None && KvNodesInStack(hOrigin) > 0));
+
+		if(!bIsSubSection) {
+			new bool:bExists = !(KvGetNum(hDest, sSection, -1337) == -1337);
+			if(!bExists || (bReplace && bExists)) {
+				KvSetString(hDest, sSection, sValue);
+			}
+		} else {
+			if (KvGotoFirstSubKey(hOrigin, false)) {
+				if(bFirst) {
+					KvCopySubkeysSafe_Iterate(hOrigin, hDest, bReplace, false);
+				} else {
+					KvJumpToKey(hDest, sSection, true);
+					KvCopySubkeysSafe_Iterate(hOrigin, hDest, bReplace, false);
+					KvGoBack(hDest);
+				}
+
+				KvGoBack(hOrigin);
+			}
+		}
+
+    } while (KvGotoNextKey(hOrigin, false));
 }
 
 public LoadAllowedItemSets() {
@@ -819,12 +844,24 @@ public GetItemInfo(String:sItemSlot[], maxLenIS, String:sItemClass[], maxLenIC, 
 
 	// Then overwrite those with prefab values
 	new String:sPrefabSlot[64];
-	KvGetString(g_hItems, "prefab", sPrefabSlot, sizeof(sPrefabSlot));
+	KvGetString(g_hItems, "prefab", sPrefabSlot, sizeof(sPrefabSlot), "");
 
-	new Handle:hTriePrefab = INVALID_HANDLE;
-	if(GetTrieValue(g_hTriePrefabs, sPrefabSlot, hTriePrefab) && hTriePrefab != INVALID_HANDLE) {
-		GetTrieString(hTriePrefab, "item_slot", sItemSlot, maxLenIS);
-		GetTrieString(hTriePrefab, "item_class", sItemClass, maxLenIC);
+	while(strlen(sPrefabSlot) > 0) {
+		KvSetString(g_hItems, "prefab", "");
+		new String:sPrefabBuffers[8][64];
+		new iPrefabsUsed = ExplodeString(sPrefabSlot, " ", sPrefabBuffers, 8, 64);
+
+		for(new iPrefabIdx = 0; iPrefabIdx < iPrefabsUsed; iPrefabIdx++) {
+			new Handle:hKvPrefab = INVALID_HANDLE;
+			if(GetTrieValue(g_hTriePrefabs, sPrefabBuffers[iPrefabIdx], hKvPrefab) && hKvPrefab != INVALID_HANDLE) {
+				//KvGetString(hKvPrefab, "item_slot", sItemSlot, maxLenIS, sItemSlot);
+				//KvGetString(hKvPrefab, "item_class", sItemClass, maxLenIC, sItemClass);
+
+				KvCopySubkeysSafe_Iterate(hKvPrefab, g_hItems, true, true);
+			}
+		}
+
+		KvGetString(g_hItems, "prefab", sPrefabSlot, sizeof(sPrefabSlot), "");
 	}
 
 	// And finally use the values defined in the section directly
@@ -888,19 +925,19 @@ public IsSkin(Handle:hSkins, iID) {
 
 public OnPluginEnd() {
 	// Cleanup no longer needed Handles
-	RecursiveCloseTrieHandleByArray(g_hArrayPrefabs, g_hTriePrefabs);
+	RecursiveCloseKeyValuesByArray(g_hArrayPrefabs, g_hTriePrefabs);
 
 	CloseHandle(g_hItems);
 	CloseHandle(g_hTrieDefaults);
 	CloseHandle(g_hArrayAttributelessItemsets);
 }
 
-public RecursiveCloseTrieHandleByArray(Handle:hArray, Handle:hTrie) {
+public RecursiveCloseKeyValuesByArray(Handle:hArray, Handle:hTrie) {
 	for(new iPos = 0; iPos < GetArraySize(hArray); iPos++) {
 		new String:sKey[64];
 		GetArrayString(hArray, iPos, sKey, sizeof(sKey));
 
-		RecursiveCloseTrieHandleAtomic(hTrie, sKey);
+		RecursiveCloseHandleAtomic(hTrie, sKey);
 	}
 
 	CloseHandle(hArray);
@@ -908,28 +945,28 @@ public RecursiveCloseTrieHandleByArray(Handle:hArray, Handle:hTrie) {
 }
 
 public RecursiveCloseTrieHandleDefaults(Handle:hTrie) {
-	RecursiveCloseTrieHandleAtomic(hTrie, "AllowedWeapons");
-	RecursiveCloseTrieHandleAtomic(hTrie, "BlockedWeapons");
-	RecursiveCloseTrieHandleAtomic(hTrie, "BlockedWeaponIDs");
+	RecursiveCloseHandleAtomic(hTrie, "AllowedWeapons");
+	RecursiveCloseHandleAtomic(hTrie, "BlockedWeapons");
+	RecursiveCloseHandleAtomic(hTrie, "BlockedWeaponIDs");
 
-	RecursiveCloseTrieHandleAtomic(hTrie, "RenamedWeapons");
+	RecursiveCloseHandleAtomic(hTrie, "RenamedWeapons");
 
-	RecursiveCloseTrieHandleAtomic(hTrie, "AllowHatsFromSet");
-	RecursiveCloseTrieHandleAtomic(hTrie, "BlockedHats");
+	RecursiveCloseHandleAtomic(hTrie, "AllowHatsFromSet");
+	RecursiveCloseHandleAtomic(hTrie, "BlockedHats");
 
-	RecursiveCloseTrieHandleAtomic(hTrie, "AllowedHats");
-	RecursiveCloseTrieHandleAtomic(hTrie, "ActionItems");
-	RecursiveCloseTrieHandleAtomic(hTrie, "NoiseMaker");
-	RecursiveCloseTrieHandleAtomic(hTrie, "MiscItems");
-	RecursiveCloseTrieHandleAtomic(hTrie, "WeaponSkins");
+	RecursiveCloseHandleAtomic(hTrie, "AllowedHats");
+	RecursiveCloseHandleAtomic(hTrie, "ActionItems");
+	RecursiveCloseHandleAtomic(hTrie, "NoiseMaker");
+	RecursiveCloseHandleAtomic(hTrie, "MiscItems");
+	RecursiveCloseHandleAtomic(hTrie, "WeaponSkins");
 
-	RecursiveCloseTrieHandleAtomic(hTrie, "AllowedWeaponsForMain");
-	RecursiveCloseTrieHandleAtomic(hTrie, "BlockedWeaponsForSupp");
-	RecursiveCloseTrieHandleAtomic(hTrie, "BlockedWeaponsForMain");
-	RecursiveCloseTrieHandleAtomic(hTrie, "AllowedWeaponsForSupp");
+	RecursiveCloseHandleAtomic(hTrie, "AllowedWeaponsForMain");
+	RecursiveCloseHandleAtomic(hTrie, "BlockedWeaponsForSupp");
+	RecursiveCloseHandleAtomic(hTrie, "BlockedWeaponsForMain");
+	RecursiveCloseHandleAtomic(hTrie, "AllowedWeaponsForSupp");
 }
 
-public RecursiveCloseTrieHandleAtomic(Handle:hTrie, const String:sEntry[64]) {
+public RecursiveCloseHandleAtomic(Handle:hTrie, const String:sEntry[64]) {
 	new Handle:hResultPart = INVALID_HANDLE;
 	GetTrieValue(hTrie, sEntry, hResultPart);
 	CloseHandle(hResultPart);
