@@ -199,7 +199,7 @@ public States:GenerateWhitelist(const String:sConfig[]) {
 
 	new Handle:hSkins = LoadSkins();
 	if(hSkins == INVALID_HANDLE) {
-		CloseHandle(hConfig);
+		CloseWeaponConfig(hConfig);
 		LogError("Config missing: skins.cfg");
 		return State_ConfigMissing_Skins;
 	}
@@ -210,8 +210,7 @@ public States:GenerateWhitelist(const String:sConfig[]) {
 	CloseHandle(hResult);
 	CloseHandle(hSkins);
 
-	// Todo: CloseHandle(hConfig) but with recursive
-	//CloseHandle(hAllowedWeapons);
+	CloseWeaponConfig(hConfig);
 
 	LogMessage("Whitelist generated from config: %s", sConfig);
 
@@ -222,6 +221,14 @@ public States:GenerateWhitelist(const String:sConfig[]) {
 //----------------------------------------
 //	Load Configurations
 //----------------------------------------
+
+public CloseWeaponConfig(Handle:hConfig) {
+	RecursiveCloseHandleAtomic(hConfig, "Allowed");
+	RecursiveCloseHandleAtomic(hConfig, "ForceBlock");
+	RecursiveCloseHandleAtomic(hConfig, "ForceAllow");
+	RecursiveCloseHandleAtomic(hConfig, "Global");
+	CloseHandle(hConfig);
+}
 
 public Handle:LoadWeaponConfig(const String:sConfig[]) {
 	new String:sPath[PLATFORM_MAX_PATH];
@@ -240,6 +247,7 @@ public Handle:LoadWeaponConfig(const String:sConfig[]) {
 
 	new Handle:hAllowedWeapons = CreateArray(64);
 	new Handle:hForceBlockedWeapons = CreateArray(64);
+	new Handle:hForceAllowedItems = CreateArray(64);
 	new Handle:hSettings = CreateTrie();
 
 	new Handle:rSection = CompileRegex("^\\[(.*)\\]", PCRE_CASELESS);
@@ -270,6 +278,11 @@ public Handle:LoadWeaponConfig(const String:sConfig[]) {
 			continue;
 		}
 
+		if(StrEqual(sSection, "ForceAllow")) {
+			PushArrayString(hForceAllowedItems, sLine);
+			continue;
+		}
+
 		if(StrEqual(sSection, "Global")) {
 			if(MatchRegex(rValue, sLine) > 0) {
 				decl String:sKey[64];
@@ -297,6 +310,7 @@ public Handle:LoadWeaponConfig(const String:sConfig[]) {
 	new Handle:hResult = CreateTrie();
 	SetTrieValue(hResult, "Allowed", hAllowedWeapons);
 	SetTrieValue(hResult, "ForceBlock", hForceBlockedWeapons);
+	SetTrieValue(hResult, "ForceAllow", hForceAllowedItems);
 	SetTrieValue(hResult, "Global", hSettings);
 
 	return hResult;
@@ -570,6 +584,10 @@ public Handle:GetResultTrie(Handle:hConfig, Handle:hSkins) {
 	new Handle:hForceBlockedWeapons = INVALID_HANDLE;
 	GetTrieValue(hConfig, "ForceBlock", hForceBlockedWeapons);
 
+	new Handle:hForceAllowedItems = INVALID_HANDLE;
+	GetTrieValue(hConfig, "ForceAllow", hForceAllowedItems);
+
+
 	new Handle:hSettings = INVALID_HANDLE;
 	GetTrieValue(hConfig, "Global", hSettings);
 
@@ -632,9 +650,12 @@ public Handle:GetResultTrie(Handle:hConfig, Handle:hSkins) {
 		if(!IsWeaponSlot(sItemSlot))
 			continue;
 
+		new bool:bForceBlocked = (FindStringInArray(hForceBlockedWeapons, sName) != -1);
+		//new bool:bForceAllowed = (FindStringInArray(hForceBlockedWeapons, sName) != -1);
+
 
 		// Allow all weapons that are specified in the config (either by name or by id)
-		if((FindStringInArray(hAllowedWeapons, sName) != -1 || FindStringInArray(hAllowedWeapons, sIndex) != -1) && FindStringInArray(hForceBlockedWeapons, sName) == -1) {
+		if((FindStringInArray(hAllowedWeapons, sName) != -1 || FindStringInArray(hAllowedWeapons, sIndex) != -1) && !bForceBlocked) {
 			PushArrayString(hArrayAllowedWeapons, sName);
 
 			// Also sort them into the "pretty" arrays for a nice header output
@@ -671,7 +692,7 @@ public Handle:GetResultTrie(Handle:hConfig, Handle:hSkins) {
 		//        linear instead of "pre-reading" certain item-indexes.
 		//        As long as Valve keeps it this way, all's good.
 		new iSkin = IsSkin(hSkins, iIndex);
-		if(iSkin != -1 && FindStringInArray(hForceBlockedWeapons, sName) == -1) {
+		if(iSkin != -1 && !bForceBlocked) {
 			if(!(iSkin > 0 && FindValueInArray(hArrayBlockedWeaponIDs, iSkin) != -1)) {
 				PushArrayString(hArrayWeaponSkins, sName);
 				continue;
@@ -679,7 +700,7 @@ public Handle:GetResultTrie(Handle:hConfig, Handle:hSkins) {
 		}
 
 		// If all weapons should be allowed except the ones specified in the blocked section
-		if(bAllowAllWeapons && FindStringInArray(hForceBlockedWeapons, sName) == -1) {
+		if(bAllowAllWeapons && !bForceBlocked) {
 			PushArrayString(hArrayAllowedWeapons, sName);
 
 			// Also sort them into the "pretty" arrays for a nice header output
@@ -751,8 +772,11 @@ public Handle:GetResultTrie(Handle:hConfig, Handle:hSkins) {
 		if(IsUnrelatedItemClass(sItemClass))
 			continue;
 
+		new bool:bForceBlocked = (FindStringInArray(hForceBlockedWeapons, sName) != -1);
+		new bool:bForceAllowed = (FindStringInArray(hForceAllowedItems, sName) != -1);
+
 		// Block hats which could complete a set
-		if(!GetSetting(hSettings, "AllowWeapons", g_bAllowWeaponSets)) {
+		if(!bForceAllowed && !GetSetting(hSettings, "AllowWeapons", g_bAllowWeaponSets)) {
 			new String:sItemSet[64];
 			KvGetString(g_hItems, "item_set", sItemSet, sizeof(sItemSet), "");
 			if(strlen(sItemSet) > 0) {
@@ -781,7 +805,7 @@ public Handle:GetResultTrie(Handle:hConfig, Handle:hSkins) {
 				KvGoBack(g_hItems);
 
 				if(bIsNoisemaker) {
-					if(FindStringInArray(hForceBlockedWeapons, sName) == -1) {
+					if(!bForceBlocked) {
 						PushArrayString(hArrayNoiseMaker, sName);
 					} else {
 						PushArrayString(hArrayBlockedItems, sName);
@@ -796,7 +820,7 @@ public Handle:GetResultTrie(Handle:hConfig, Handle:hSkins) {
 		}
 
 		if(StrEqual(sItemSlot, "head")) {
-			if(GetSetting(hSettings, "AllowHats", g_bAllowHats) && FindStringInArray(hForceBlockedWeapons, sName) == -1) {
+			if(!bForceBlocked && (bForceAllowed || GetSetting(hSettings, "AllowHats", g_bAllowHats))) {
 				PushArrayString(hArrayAllowedHats, sName);
 			} else PushArrayString(hArrayBlockedItems, sName);
 
@@ -804,9 +828,10 @@ public Handle:GetResultTrie(Handle:hConfig, Handle:hSkins) {
 		}
 
 		if(StrEqual(sItemSlot, "misc")) {
-			if(GetSetting(hSettings, "AllowHats", g_bAllowHats) && FindStringInArray(hForceBlockedWeapons, sName) == -1) {
+			if(!bForceBlocked && (bForceAllowed || GetSetting(hSettings, "AllowHats", g_bAllowHats))) {
 				PushArrayString(hArrayMiscItems, sName);
 			} else PushArrayString(hArrayBlockedItems, sName);
+
 			continue;
 		}
 
