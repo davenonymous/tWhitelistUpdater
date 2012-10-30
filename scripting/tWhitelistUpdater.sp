@@ -403,6 +403,9 @@ public LoadAllowedItemSets() {
 
 						// Some attributes don't affect gameplay, 'special dsp' is ok for a itemset (engineer halloween)
 						if(StrEqual(sAttributeName, "special dsp"))continue;
+						if(StrEqual(sAttributeName, "mystery solving time decrease"))continue;
+						if(StrEqual(sAttributeName, "chance of hunger decrease"))continue;
+
 						iCount++;
 					} while (KvGotoNextKey(g_hItems, false));
 					KvGoBack(g_hItems);
