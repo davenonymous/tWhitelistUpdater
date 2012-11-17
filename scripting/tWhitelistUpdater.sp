@@ -929,6 +929,7 @@ public bool:IsMainClass(String:sClass[]) {
 			StrEqual(sClass, "soldier") ||
 			StrEqual(sClass, "heavy") ||
 			StrEqual(sClass, "demo") ||
+			StrEqual(sClass, "demoman") ||
 			StrEqual(sClass, "medic")
 	);
 }
