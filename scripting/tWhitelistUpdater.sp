@@ -6,7 +6,7 @@
 
 #define UPDATE_URL    "http://updates.thrawn.de/tWhitelistUpdater/package.tWhitelistUpdater.cfg"
 
-#define VERSION 				"0.1.11"
+#define VERSION 				"0.1.12"
 #define PATH_ITEMS_GAME			"scripts/items/items_game.txt"
 
 new Handle:g_hCvarAutoupdate = INVALID_HANDLE;
@@ -538,7 +538,7 @@ public PrintArray(Handle:hFile, Handle:hResult, const String:sSection[], const S
 		WriteFileLine(hFile, "    // None", sHeader);
 	} else {
 		for(new i=0; i < iSize; i++) {
-			new String:sBuffer[64];
+			new String:sBuffer[128];
 			GetArrayString(hResultPart, i, sBuffer, sizeof(sBuffer));
 			Format(sBuffer, sizeof(sBuffer), "\"%s\"", sBuffer);
 			WriteFileLine(hFile, "    %50s \"%i\"", sBuffer, bState ? 1 : 0);
@@ -642,7 +642,7 @@ public Handle:GetResultTrie(Handle:hConfig, Handle:hSkins) {
 		// Get basic information about the item: Defaults < Prefabs < Values
 		new String:sItemSlot[16];
 		new String:sItemClass[16];
-		new String:sName[64];
+		new String:sName[128];
 		GetItemInfo(sItemSlot, sizeof(sItemSlot), sItemClass, sizeof(sItemClass), sName, sizeof(sName));
 
 
@@ -766,7 +766,7 @@ public Handle:GetResultTrie(Handle:hConfig, Handle:hSkins) {
 
 		decl String:sItemSlot[16];
 		decl String:sItemClass[16];
-		decl String:sName[64];
+		decl String:sName[128];
 		GetItemInfo(sItemSlot, sizeof(sItemSlot), sItemClass, sizeof(sItemClass), sName, sizeof(sName));
 
 		if(IsWeaponSlot(sItemSlot))
